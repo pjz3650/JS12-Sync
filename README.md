@@ -4,7 +4,7 @@
 
 <br />
 
-[![Offline tests](https://img.shields.io/badge/Testes_offline-11_aprovados-6df0bf)](#executar-os-testes)
+[![Offline tests](https://img.shields.io/badge/Testes_offline-22_aprovados-6df0bf)](#executar-os-testes)
 [![Python 3.13](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![Windows](https://img.shields.io/badge/Windows-desktop-0078D4)](#começar)
 [![License: MIT](https://img.shields.io/badge/License-MIT-6df0bf)](LICENSE)
@@ -12,7 +12,7 @@
 
 **Escolha suas playlists no PC. Leve os arquivos para o seu player USB.**
 
-[Instalação completa](mp4-sync/README.md) · [Configurar Spotify](mp4-sync/README.md#configurar-o-spotify-pela-primeira-vez) · [Contribuir](CONTRIBUTING.md) · [Relatar um problema](https://github.com/pjz3650/JS12-Sync/issues)
+[Instalação completa](mp4-sync/README.md) · [Estúdio de telas com IA](docs/theme-studio.md) · [Configurar Spotify](mp4-sync/README.md#configurar-o-spotify-pela-primeira-vez) · [Contribuir](CONTRIBUTING.md)
 
 </div>
 
@@ -32,6 +32,12 @@ Depois da transferência, a reprodução acontece no próprio player, sem conex�
 | Manter a seleção salva no PC. | Ativar a transferência ao conectar o USB, com o programa aberto. | Compartilhar um mesmo MP3 entre várias listas, sem duplicar a faixa. |
 
 A sincronização cria sua própria pasta `SPOTIFY_SYNC` e preserva as músicas existentes fora dela. Arquivos antigos não são removidos automaticamente para liberar espaço.
+
+### Desenhe uma interface conversando com a IA
+
+Na aba **Personalizar tela com IA**, descreva cores, textos e posições. Veja a prévia e peça ajustes. Quando disser **“ficou bom”**, o programa aprova a revisão e exporta um pacote de desenho com imagens e recursos genéricos.
+
+O chat usa a API da OpenAI, com chave local e modelo configurável. **Aplicar a interface no MP4 ainda não está disponível:** falta converter para STY/MCG e validar o backup e a recuperação do firmware. O pacote exportado não é um tema instalável. [Veja como usar o estúdio](docs/theme-studio.md).
 
 ## Começar
 
@@ -76,7 +82,9 @@ O programa usa OAuth PKCE e não pede Client Secret nem sua senha. As regras do 
 | --- | --- |
 | Interface Tkinter e seleção no PC | Implementadas; abertura da janela verificada |
 | Cache e conversão MP3 de 128 kb/s | Implementados; verificados também com áudio sintético |
-| Testes offline | 11 testes de arquivos, integridade, cache e respostas simuladas da API |
+| Testes offline | 22 testes de arquivos, integridade, APIs simuladas, desenhos e aprovação |
+| Estúdio de telas com IA | Chat, prévia, ajustes e aprovação/exportação implementados; geração real verificada |
+| Instalação da interface no player | Indisponível; depende de compilação nativa, backup completo e recuperação validados |
 | Login real e sincronização de playlists | Precisam de validação com uma conta autorizada |
 | Leitura de M3U no JS-12 | Precisa de confirmação no firmware do aparelho |
 | Outros players | Precisam de adaptação da identificação USB no código |
@@ -95,7 +103,11 @@ JS12-Sync/
 │   ├── spotify_access.py       # OAuth PKCE e consulta das playlists
 │   ├── download_worker.py      # Busca e conversão em processo separado
 │   ├── core.py                 # Identificação USB e cópia verificada
+│   ├── theme_studio.py         # Chat, prévia e aprovação de telas
+│   ├── theme_agent.py          # Geração estruturada com a API da OpenAI
+│   ├── theme_design.py         # Desenho, renderização e exportação
 │   ├── test_sync.py            # Testes offline
+│   ├── test_theme_studio.py    # Testes do desenho e da integração de IA
 │   └── README.md               # Manual de instalação e operação
 ├── CONTRIBUTING.md
 └── LICENSE
@@ -108,7 +120,7 @@ Os dados de execução ficam em `%LOCALAPPDATA%\JS12Sync`: configuração, autor
 Na raiz do repositório, com o ambiente instalado:
 
 ```powershell
-.\mp4-sync\.venv\Scripts\python.exe -m unittest discover -s mp4-sync -p test_sync.py -v
+.\mp4-sync\.venv\Scripts\python.exe -m unittest discover -s mp4-sync -p "test_*.py" -v
 ```
 
 Eles não acessam sua conta Spotify nem escrevem em um aparelho físico. A suíte deve ser executada em Windows. Ainda não há execução automática configurada no GitHub Actions.
