@@ -1,0 +1,47 @@
+# Local device investigation: firmware, SDK copies, dumps and installers.
+/device-research/
+
+# Python environments and generated files.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Credentials, local settings and runtime data.
+.env
+.env.*
+!.env.example
+.cache*
+auth-*.bin
+config.json
+config.tmp
+job-*/
+JS12Sync/
+SPOTIFY_SYNC/
+*.log
+
+# Audio, device dumps and local installers do not belong in the source repo.
+*.mp3
+*.mp4
+*.wav
+*.flac
+*.m4a
+*.bin
+*.msi
+*.exe
+
+# Editor and operating system files.
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# One-off local setup output.
+/mp4-sync/spotdl-help.txt
