@@ -15,6 +15,7 @@ import webbrowser
 
 from core import device_roots, volume_serial, deploy, CREATE_NO_WINDOW
 from spotify_access import SpotifyAccess, REDIRECT
+from theme_studio import ThemeStudio
 
 HERE = Path(__file__).resolve().parent
 STATE = Path(os.environ['LOCALAPPDATA']) / 'JS12Sync'
@@ -25,8 +26,8 @@ class App:
     def __init__(self, root):
         self.root = root
         root.title('JS12 Sync — playlists no MP4')
-        root.geometry('790x660')
-        root.minsize(680, 540)
+        root.geometry('1100x820')
+        root.minsize(960, 760)
         try:
             self.config = json.loads((STATE / 'config.json').read_text(encoding='utf-8'))
         except (OSError, ValueError):
@@ -42,8 +43,14 @@ class App:
         self.all = tk.BooleanVar(value=self.config.get('all', True))
         self.auto = tk.BooleanVar(value=self.config.get('auto', False))
         self.status = tk.StringVar(value='Identificando o MP4...')
-        outer = ttk.Frame(root, padding=16)
-        outer.pack(fill='both', expand=True)
+        self.tabs = ttk.Notebook(root)
+        self.tabs.pack(fill='both', expand=True)
+        outer = ttk.Frame(self.tabs, padding=16)
+        self.tabs.add(outer, text='Playlists e MP4')
+        self.studio = ThemeStudio(self.tabs, STATE)
+        self.tabs.add(self.studio, text='Personalizar tela com IA')
+        if '--studio' in sys.argv:
+            self.tabs.select(self.studio)
         ttk.Label(outer, text='Spotify → JS-12', font=('Segoe UI', 19, 'bold')).pack(anchor='w')
         ttk.Label(outer, text='Escolha no PC. Escute os arquivos transferidos no MP4.').pack(anchor='w', pady=(2, 12))
         row = ttk.Frame(outer)
@@ -302,6 +309,7 @@ class App:
 
     def close(self):
         self.save()
+        self.studio.shutdown()
         self.stop.set()
         self.kill_worker()
         self.root.destroy()

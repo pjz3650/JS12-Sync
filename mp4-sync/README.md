@@ -2,6 +2,8 @@
 
 Aplicativo de desktop para Windows que lista playlists da sua conta Spotify, permite selecionar quais sincronizar e transfere arquivos MP3 para um player JS-12 conectado por USB.
 
+A aba **Personalizar tela com IA** permite criar e ajustar uma prévia de interface pelo chat. A aprovação exporta um pacote de desenho no PC; a aplicação no MP4 ainda não está disponível. Consulte o [manual do estúdio](../docs/theme-studio.md).
+
 **Projeto experimental:** a interface, o conversor e os testes offline foram verificados. A sincronização completa com uma conta Spotify e a leitura das listas M3U no JS-12 ainda precisam de validação. A identificação USB está configurada para uma unidade específica; veja [compatibilidade](#compatibilidade-e-outros-aparelhos) antes de usar outro dispositivo.
 
 ## O que faz
@@ -67,6 +69,8 @@ Na pasta `mp4-sync`, execute:
 
 Ou dê dois cliques em **Abrir JS12 Sync.cmd**. O atalho usa o ambiente `.venv` local e abre a interface sem console. Para investigar erros de inicialização, prefira o comando acima, que mostra as mensagens no terminal.
 
+Para abrir diretamente a aba de IA, use **Abrir Estudio IA.cmd** ou execute `app.py --studio` com o mesmo Python do ambiente. Se uma versão anterior do programa estiver aberta, feche-a e reabra para carregar a atualização.
+
 ### Configurar o Spotify pela primeira vez
 
 1. Clique em **Configurar acesso** no programa e abra o [painel do Spotify for Developers](https://developer.spotify.com/dashboard).
@@ -118,6 +122,8 @@ Os dados de execução ficam fora do repositório, em `%LOCALAPPDATA%\JS12Sync`:
 | `Music/` | Cache de MP3, reutilizado nas próximas sincronizações |
 | `download.log` | Registro detalhado da última busca de áudio |
 | `job-*/` | Arquivos temporários com metadados durante a sincronização |
+| `studio/session.json` | Conversa recente, desenho e aprovação da interface |
+| `studio/exports/` | Pacotes de desenho aprovados, sem firmware instalável |
 
 O programa não lê cookies, senhas nem o cache do aplicativo Spotify. A proteção DPAPI não transforma o arquivo de autorização em algo que deva ser compartilhado: mantenha os tokens e os dados pessoais fora do GitHub. Os logs também podem conter nomes de faixas, URLs e caminhos locais.
 
@@ -155,7 +161,11 @@ mp4-sync/
   spotify_access.py      # OAuth PKCE, cache DPAPI e leitura paginada da API
   download_worker.py     # Processo separado de busca/conversão com spotDL
   core.py                # Identificação USB, integridade e cópia dos arquivos
+  theme_studio.py        # Chat, prévia e aprovação de interface
+  theme_agent.py         # Cliente da API da OpenAI para desenhos estruturados
+  theme_design.py        # Validação, renderização e exportação de telas
   test_sync.py           # Testes offline
+  test_theme_studio.py   # Testes do desenho, aprovação e contrato da API
   requirements.txt       # Dependência principal fixada
   requirements-lock.txt  # Versões do ambiente utilizado
   Abrir JS12 Sync.cmd     # Inicializador Windows
@@ -164,10 +174,10 @@ mp4-sync/
 Execute na pasta do aplicativo:
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest -v test_sync
+.\.venv\Scripts\python.exe -m unittest discover -p "test_*.py" -v
 ```
 
-Os 11 testes offline cobrem preservação de arquivos, ordem e deduplicação, espaço insuficiente, desconexão durante a cópia, IDs inválidos, preservação de listas com downloads pendentes, cache DPAPI e respostas da API simuladas. Não utilizam sua conta Spotify nem escrevem no player físico. O conversor e o cache também foram verificados separadamente com um áudio sintético.
+Os 22 testes offline cobrem preservação de arquivos, ordem e deduplicação, espaço insuficiente, desconexão durante a cópia, IDs inválidos, preservação de listas com downloads pendentes, cache DPAPI, respostas de APIs simuladas, desenho de telas, aprovação e exportação de recursos. Não utilizam suas contas Spotify/OpenAI nem escrevem no player físico. O conversor e o cache também foram verificados separadamente com um áudio sintético.
 
 A validação com login real, downloads das playlists e reprodução das listas no JS-12 continua pendente. Não há instalador, executável único, atualização automática ou suporte a múltiplos modelos de player nesta versão.
 

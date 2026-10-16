@@ -9,7 +9,7 @@ Obrigado por ajudar a tornar o projeto útil em mais aparelhos. Comece pelo [gui
 3. Execute os testes offline na raiz do repositório:
 
    ```powershell
-   .\mp4-sync\.venv\Scripts\python.exe -m unittest discover -s mp4-sync -p test_sync.py -v
+   .\mp4-sync\.venv\Scripts\python.exe -m unittest discover -s mp4-sync -p "test_*.py" -v
    ```
 
 4. Abra um pull request para `main`, explicando o problema, o resultado e como verificou a alteração. Diferencie testes simulados de testes feitos em aparelho físico.
