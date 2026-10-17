@@ -85,6 +85,8 @@ Para abrir diretamente a aba de IA, use **Abrir Estudio IA.cmd** ou execute `app
 5. Abra as configurações do aplicativo no painel, copie o **Client ID** e cole na janela do JS12 Sync.
 6. Clique em **Salvar e conectar Spotify** e autorize o acesso de leitura na página oficial que abrir no navegador.
 
+O Client ID é salvo automaticamente assim que você cola um valor válido de 32 caracteres. Ele é reutilizado nas próximas aberturas do programa, mesmo se você fechar a janela antes de conectar ao Spotify. O botão **Salvar** também permite guardar a configuração sem abrir o login. O arquivo fica em `%LOCALAPPDATA%\JS12Sync\config.json`.
+
 Não informe senha nem **Client Secret** ao JS12 Sync. A autorização usa OAuth com PKCE e solicita apenas os escopos `playlist-read-private` e `playlist-read-collaborative`.
 
 O servidor de retorno do login escuta somente em `127.0.0.1:8765`, durante a autorização, por até três minutos. Cadastre o endereço exatamente como acima; não substitua `127.0.0.1` por `localhost`.

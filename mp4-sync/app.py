@@ -78,6 +78,8 @@ class App:
         self.logbox.pack(fill='both', pady=(8, 0))
         self.log('Primeiro uso: configure seu Client ID e conecte a conta. Não precisa de Client Secret.')
         self.log('MP3: cache no PC + pasta SPOTIFY_SYNC no aparelho. Músicas existentes são preservadas.')
+        if self.config.get('client_id'):
+            self.log('Client ID do Spotify carregado deste computador. Use Conectar Spotify / atualizar para continuar.')
         root.protocol('WM_DELETE_WINDOW', self.close)
         root.after(150, self.pump)
         root.after(300, self.watch)
@@ -262,7 +264,8 @@ class App:
             return
         dialog = tk.Toplevel(self.root)
         dialog.title('Acesso de leitura ao Spotify')
-        dialog.geometry('650x440')
+        dialog.geometry('700x540')
+        dialog.minsize(640, 500)
         dialog.transient(self.root)
         box = ttk.Frame(dialog, padding=18)
         box.pack(fill='both', expand=True)
@@ -274,20 +277,47 @@ class App:
         redirect.configure(state='readonly')
         redirect.pack(fill='x', pady=10)
         ttk.Label(box, text='Client ID:').pack(anchor='w')
-        entry = ttk.Entry(box)
-        entry.insert(0, self.config.get('client_id', ''))
+        client_id = tk.StringVar(value=self.config.get('client_id', ''))
+        entry = ttk.Entry(box, textvariable=client_id)
         entry.pack(fill='x', pady=5)
+        saved_status = tk.StringVar(value='Client ID já salvo neste computador.' if self.config.get('client_id') else 'Cole o Client ID: ele será salvo automaticamente quando estiver completo.')
+        ttk.Label(box, textvariable=saved_status, wraplength=600).pack(anchor='w', pady=(3, 8))
 
-        def commit():
-            value = entry.get().strip()
+        def save_client_id(show_error=False):
+            value = client_id.get().strip()
             if len(value) != 32 or any(c not in '0123456789abcdefABCDEF' for c in value):
-                messagebox.showerror('Client ID', 'Copie o Client ID de 32 caracteres do seu aplicativo.', parent=dialog)
-                return
+                saved_status.set('Informe o Client ID completo de 32 caracteres. O valor salvo anteriormente foi preservado.')
+                if show_error:
+                    messagebox.showerror('Client ID', 'Copie o Client ID de 32 caracteres do seu aplicativo.', parent=dialog)
+                return False
+            previous = self.config.get('client_id')
             self.config['client_id'] = value
-            self.save()
+            try:
+                self.save()
+            except OSError:
+                if previous is None:
+                    self.config.pop('client_id', None)
+                else:
+                    self.config['client_id'] = previous
+                saved_status.set('Não foi possível salvar. Confira as permissões da pasta de dados do programa.')
+                return False
+            saved_status.set('Client ID salvo neste computador. Será reutilizado nas próximas aberturas.')
+            return True
+
+        client_id.trace_add('write', lambda *_: save_client_id())
+
+        def commit(connect=False):
+            if not save_client_id(show_error=True):
+                return
             dialog.destroy()
-            self.start(self.load_playlists)
-        ttk.Button(box, text='Salvar e conectar Spotify', command=commit).pack(anchor='e', pady=10)
+            self.log('Client ID salvo. Não será necessário informar novamente ao abrir o programa.')
+            if connect:
+                self.start(self.load_playlists)
+
+        buttons = ttk.Frame(box)
+        buttons.pack(fill='x', pady=10)
+        ttk.Button(buttons, text='Salvar', command=commit).pack(side='left')
+        ttk.Button(buttons, text='Salvar e conectar Spotify', command=lambda: commit(connect=True)).pack(side='right')
 
     def install_startup(self):
         startup = Path(os.environ['APPDATA']) / 'Microsoft/Windows/Start Menu/Programs/Startup/JS12 Sync.lnk'
