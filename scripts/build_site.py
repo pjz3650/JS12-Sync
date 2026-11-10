@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import time
 
 from package_release import ROOT, package
 
@@ -19,7 +20,9 @@ def build():
     for name in ('JS12-Sync-Windows.zip', 'SHA256SUMS.txt'):
         shutil.copyfile(ROOT / 'dist' / name, downloads / name)
     digest = hashlib.sha256((downloads / 'JS12-Sync-Windows.zip').read_bytes()).hexdigest()
-    (site / 'version.json').write_text(json.dumps({'commit': commit, 'sha256': digest}), encoding='utf-8')
+    (site / 'version.json').write_text(json.dumps({
+        'commit': commit, 'sha256': digest, 'built_at': time.time(),
+    }), encoding='utf-8')
     template = (ROOT / 'site' / 'index.html').read_text(encoding='utf-8')
     (site / 'index.html').write_text(template.replace('{{COMMIT}}', commit).replace('{{SHA256}}', digest), encoding='utf-8')
     print(f'Site ready: {commit}')

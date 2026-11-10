@@ -22,6 +22,7 @@ def deploy():
     query['ref'] = commit
     url = urlunsplit(parsed._replace(query=urlencode(query)))
     # Never print hook URLs, responses, or exceptions containing credentials.
+    requested_at = time.time() - 5  # Small clock skew allowance between hosted runners.
     try:
         with urlopen(Request(url, method='POST'), timeout=30) as response:
             if response.status != 200:
@@ -36,7 +37,7 @@ def deploy():
             nonce = time.time_ns()
             with urlopen(f'{site}/version.json?verify={nonce}', timeout=30) as response:
                 version = json.load(response)
-            if version.get('commit') == commit:
+            if version.get('commit') == commit and version.get('built_at', 0) >= requested_at:
                 if version.get('sha256') != expected:
                     raise RuntimeError('Render package differs from the Windows CI artifact')
                 with urlopen(f'{site}/downloads/JS12-Sync-Windows.zip?verify={nonce}', timeout=60) as response:

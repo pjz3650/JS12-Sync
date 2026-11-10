@@ -4,6 +4,7 @@ import io
 import json
 from pathlib import Path
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -35,17 +36,23 @@ class DeliveryTests(unittest.TestCase):
                 self.assertFalse(any(name.endswith(('.env.local', '.bin', '.mp3')) for name in names))
                 self.assertEqual(json.loads(archive.read('JS12-Sync/RELEASE.json'))['commit'], 'a' * 40)
 
-    def run_deploy(self, version_hash, download=b'tested-package'):
+    def run_deploy(self, version_hash, download=b'tested-package', stale_first=False):
         digest = hashlib.sha256(b'tested-package').hexdigest()
         responses = [io.BytesIO(b''), io.BytesIO(json.dumps({
             'commit': 'a' * 40, 'sha256': digest if version_hash is None else version_hash,
+            'built_at': time.time() + 5,
         }).encode()), io.BytesIO(download)]
         responses[0].status = 200
+        if stale_first:
+            responses.insert(1, io.BytesIO(json.dumps({
+                'commit': 'a' * 40, 'sha256': digest, 'built_at': time.time() - 3600,
+            }).encode()))
         environment = {'RENDER_DEPLOY_HOOK_URL': 'https://api.render.com/deploy/srv-test?key=secret',
                        'RENDER_SITE_URL': 'https://example.onrender.com', 'GITHUB_SHA': 'a' * 40}
         with patch.dict('os.environ', environment, clear=True), \
              patch.object(deploy_render, 'urlopen', side_effect=responses) as request, \
-             patch.object(Path, 'read_text', return_value=digest + '  JS12-Sync-Windows.zip'):
+             patch.object(Path, 'read_text', return_value=digest + '  JS12-Sync-Windows.zip'), \
+             patch.object(deploy_render.time, 'sleep'):
             deploy_render.deploy()
         return request
 
@@ -59,6 +66,10 @@ class DeliveryTests(unittest.TestCase):
     def test_deploy_rejects_package_different_from_ci(self):
         with self.assertRaisesRegex(RuntimeError, 'differs'):
             self.run_deploy('wrong-hash')
+
+    def test_repeated_deploy_waits_for_new_build_of_same_commit(self):
+        request = self.run_deploy(None, stale_first=True)
+        self.assertEqual(request.call_count, 4)
 
     def test_deploy_rejects_corrupt_public_download(self):
         with self.assertRaisesRegex(RuntimeError, 'checksum mismatch'):

@@ -41,7 +41,7 @@ O chat usa a API da OpenAI, com chave local e modelo configurável. **Aplicar a 
 
 ## Começar
 
-Você precisa de **Windows**, **Python 3.13**, internet e um aplicativo pessoal no Spotify for Developers. A versão publicada no Render (URL documentada em [CI/CD](docs/ci-cd.md)) contém um ZIP com o aplicativo e o script **Instalar JS12 Sync.cmd**. Extraia o ZIP e execute esse script para preparar as dependências; depois abra **mp4-sync/Abrir JS12 Sync.cmd**. Python 3.13 com Python Launcher e Tcl/Tk continua necessário. Não há `.exe` autônomo nesta versão.
+Você precisa de **Windows**, **Python 3.13**, internet e um aplicativo pessoal no Spotify for Developers. A [versão publicada no Render](https://js12-sync.onrender.com) contém um ZIP com o aplicativo e o script **Instalar JS12 Sync.cmd**. Extraia o ZIP e execute esse script para preparar as dependências; depois abra **mp4-sync/Abrir JS12 Sync.cmd**. Python 3.13 com Python Launcher e Tcl/Tk continua necessário. Não há `.exe` autônomo nesta versão.
 
 No PowerShell:
 
