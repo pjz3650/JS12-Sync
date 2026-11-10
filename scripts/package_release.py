@@ -34,7 +34,12 @@ def package(commit):
     archive_path = output / 'JS12-Sync-Windows.zip'
     with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as archive:
         for name, data in sorted(entries.items()):
-            archive.writestr('JS12-Sync/' + name, data)
+            # Stable metadata makes Windows CI and the Linux Render build identical.
+            info = zipfile.ZipInfo('JS12-Sync/' + name, date_time=(2026, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.create_system = 3
+            info.external_attr = 0o100644 << 16
+            archive.writestr(info, data)
     with zipfile.ZipFile(archive_path) as archive:
         if archive.testzip() is not None:
             raise RuntimeError('Corrupt release archive')

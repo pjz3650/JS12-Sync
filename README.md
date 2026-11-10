@@ -41,7 +41,7 @@ O chat usa a API da OpenAI, com chave local e modelo configurável. **Aplicar a 
 
 ## Começar
 
-Você precisa de **Windows**, **Python 3.13**, internet e um aplicativo pessoal no Spotify for Developers. A [versão publicada no GitHub Releases](https://github.com/pjz3650/JS12-Sync/releases/latest) contém um ZIP com o aplicativo e o script **Instalar JS12 Sync.cmd**. Extraia o ZIP e execute esse script para preparar as dependências; depois abra **mp4-sync/Abrir JS12 Sync.cmd**. Python 3.13 com Python Launcher e Tcl/Tk continua necessário. Não há `.exe` autônomo nesta versão.
+Você precisa de **Windows**, **Python 3.13**, internet e um aplicativo pessoal no Spotify for Developers. A versão publicada no Render (URL documentada em [CI/CD](docs/ci-cd.md)) contém um ZIP com o aplicativo e o script **Instalar JS12 Sync.cmd**. Extraia o ZIP e execute esse script para preparar as dependências; depois abra **mp4-sync/Abrir JS12 Sync.cmd**. Python 3.13 com Python Launcher e Tcl/Tk continua necessário. Não há `.exe` autônomo nesta versão.
 
 No PowerShell:
 
@@ -123,7 +123,7 @@ Na raiz do repositório, com o ambiente instalado:
 .\mp4-sync\.venv\Scripts\python.exe -m unittest discover -s mp4-sync -p "test_*.py" -v
 ```
 
-Eles não acessam sua conta Spotify nem escrevem em um aparelho físico. A suíte deve ser executada em Windows. O [GitHub Actions](https://github.com/pjz3650/JS12-Sync/actions) executa a CI em pushes e pull requests para `main`. Após um push aprovado, o CD publica o pacote Windows no GitHub Releases e verifica seu download público. Veja a [pipeline e o registro do laboratório](docs/ci-cd.md).
+Eles não acessam sua conta Spotify nem escrevem em um aparelho físico. A suíte deve ser executada em Windows. O [GitHub Actions](https://github.com/pjz3650/JS12-Sync/actions) executa a CI em pushes e pull requests para `main`. Após um push aprovado, o CD publica a página e o pacote Windows no Render e verifica o commit e o SHA-256 do download público. Veja a [pipeline e o registro do laboratório](docs/ci-cd.md).
 
 ## Contribua
 

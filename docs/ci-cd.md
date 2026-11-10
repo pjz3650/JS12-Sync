@@ -1,96 +1,108 @@
-# Pipeline CI/CD - laboratorio DevOps
+# Pipeline CI/CD - laboratório DevOps
 
-Repositorio: https://github.com/pjz3650/JS12-Sync
+Repositório: https://github.com/pjz3650/JS12-Sync
 
-## Estrategia
+## Estratégia de deployment
 
-O JS12 Sync e um aplicativo desktop Windows em Python/Tkinter, com DPAPI para
-credenciais e integracao USB. O deployment distribui um ZIP instalavel pelo
-GitHub Releases, adequado a esse tipo de aplicativo. Nao existe servidor web.
-O ZIP contem a aplicacao, manuais, licenca, dependencias fixadas, instalador
-e RELEASE.json com commit e hashes dos arquivos. Requer Windows, Python 3.13
-com Launcher/Tcl/Tk e internet. Nao e um .exe autonomo.
+O aplicativo usa Python/Tkinter, DPAPI e USB no Windows. Por solicitação do
+usuário, o deployment usa **Render Static Site** para distribuir o aplicativo
+Windows por uma página pública com ZIP, instruções e checksum. O aplicativo
+continua sendo executado no computador do usuário; a interface Tkinter não roda
+no navegador. O ZIP requer Python 3.13 com Launcher/Tcl/Tk e internet.
+O instalador prepara o ambiente e baixa FFmpeg/Deno via spotDL.
 
-## CI -> CD -> aplicacao publicada
+## Fluxo automático
 
 Arquivo: [.github/workflows/ci-cd.yml](../.github/workflows/ci-cd.yml).
 
-1. Cada push na main e cada pull request para main executam a CI em Windows.
-2. Checkout; Python 3.13; instalacao de requirements-lock.txt; pip check;
-   compileall; 22 testes offline; verificacao de imports e inicializacao Tcl/Tk.
-3. A CI empacota os arquivos permitidos, confere hashes internos e testa novamente
-   os 22 testes a partir do ZIP extraido. O pacote e preservado como artifact.
-4. O CD usa needs: ci e so executa para push em refs/heads/main. Um PR nunca publica.
-5. O mesmo artifact aprovado e recuperado e seu SHA256 conferido. Uma release
-   com tag unica por run/tentativa e criada como draft e publicada com ZIP e checksum.
-6. O CD baixa o ZIP pela URL publica sem autenticacao e compara o SHA256 com a CI.
-   A URL e o checksum sao registrados no resumo da execucao.
+1. Push em main e pull_request para main executam CI em Windows/Python 3.13.
+2. Checkout; dependências fixadas; pip check; compileall; 22 testes offline;
+   imports do app e inicialização mínima de Tkinter.
+3. Geração do ZIP e da página pública; extração do ZIP; repetição dos 22 testes.
+4. Publicação do ZIP e SHA256SUMS como artifact. Sem tokens, .env local ou músicas.
+5. O job CD tem needs: ci e só executa em push para refs/heads/main.
+6. O CD dispara o deploy hook do Render com ref igual ao SHA aprovado. Auto-Deploy
+   fica Off para impedir publicação independente dos testes. Deploys são serializados.
+7. O Render executa python3 scripts/build_site.py, gera o pacote e publica dist/site.
+8. A pipeline aguarda version.json identificar o mesmo commit e compara o hash
+   do ZIP publicado com o artifact da CI. Timeout ou divergência fazem o CD falhar.
 
-Somente o job CD possui contents: write. A pipeline usa GITHUB_TOKEN automatico;
-nao precisa de PAT nem segredos Spotify/OpenAI. O job CI tem somente leitura.
-Nao sao incluidos .env locais, tokens, ambiente virtual, cache ou musicas.
-As releases anteriores continuam acessiveis para reinstalacao de uma versao anterior.
+O empacotamento fixa metadados e finais de linha para produzir os mesmos bytes
+em Windows e Linux. RELEASE.json registra commit e hashes internos. Reverter uma
+versão deve ser feito por um novo commit revert em main, passando pela mesma CI.
 
-## Instalar a publicacao
+## Configuração Render e GitHub
 
-Abra https://github.com/pjz3650/JS12-Sync/releases/latest, baixe o ZIP e o checksum.
-Compare com Get-FileHash -Algorithm SHA256. Extraia o ZIP em uma pasta gravavel,
-execute Instalar JS12 Sync.cmd e depois mp4-sync/Abrir JS12 Sync.cmd.
-O instalador prepara o ambiente e obtem FFmpeg/Deno pelo spotDL. Spotify e IA
-continuam a exigir configuracao pessoal, conforme o manual. Use uma nova pasta
-ao trocar de release; os dados pessoais continuam em LOCALAPPDATA/JS12Sync.
+O [render.yaml](../render.yaml) documenta o serviço. Também pode ser criado no
+painel como Static Site, repositório público, branch main, Build Command
+`python3 scripts/build_site.py`, Publish Directory `dist/site` e Auto-Deploy Off.
 
-## Registro real da utilizacao da IA
+No GitHub, configure:
 
-Ferramenta: Codex, neste chat. Quantidade de prompts do usuario ate esta versao: **1**.
-Prompt literal (com PDF do laboratorio anexado):
+- Secret de Actions RENDER_DEPLOY_HOOK_URL: deploy hook do serviço Render.
+- Variable de Actions RENDER_SITE_URL: URL HTTPS pública do site, sem barra final.
 
-> implementa o roteiro do PDF nesse repo [https://github.com/pjz3650/JS12-Sync](https://github.com/pjz3650/JS12-Sync)
+O hook é uma credencial: nunca deve aparecer no código, no relatório ou nos logs.
+Não são necessárias chaves Spotify/OpenAI na pipeline. São configurações locais
+para uso posterior do aplicativo. O GITHUB_TOKEN tem somente contents: read.
 
-Resultado: pipeline CI/CD, empacotamento, instalador e documentacao. A IA inspecionou
-o codigo e os testes existentes para selecionar Windows e distribuicao desktop.
-Os comandos internos de ferramentas nao foram contados como novos prompts do usuario.
-Nao foram inventadas interacoes, falhas remotas ou aprovacoes humanas.
+## Registro real do uso da IA
 
-Problemas encontrados durante a preparacao:
+Ferramenta: Codex, neste chat. **3 mensagens de orientação do usuário até esta versão**:
 
-- A pasta inicialmente aberta pertencia a outro projeto; foi feito um clone isolado.
-- O primeiro clone nao conseguiu resolver GitHub no sandbox; nova tentativa com
-  acesso de rede autorizado concluiu o clone.
-- A extracao do PDF encontrou caractere nao suportado pelo terminal; UTF-8 resolveu.
-- Nao havia pipeline ou instalador para o pacote distribuido; ambos foram adicionados.
+1. Com o PDF do laboratório anexado: “implementa o roteiro do PDF nesse repo
+   [https://github.com/pjz3650/JS12-Sync](https://github.com/pjz3650/JS12-Sync)”.
+   Resultado: inspeção, workflow Windows, instalador, empacotamento e PR #1.
+   A primeira proposta usava GitHub Releases.
+2. “quando for fazer o deploy, use o render. Abra a área de login na barra lateral
+   quando for usar”. Resultado: CD adaptado ao Render, página de distribuição,
+   blueprint e verificação pública; login aberto no painel lateral.
+3. “ja fiz o login ja”. Resultado: sessão autenticada verificada e continuação da
+   configuração do serviço. Login foi realizado manualmente pelo usuário.
 
-Alteracoes: workflow com separacao CI/CD; script de ZIP e hashes; instalador Windows;
-README e CONTRIBUTING atualizados; este registro. Nenhuma funcionalidade USB ou
-de IA da aplicacao foi alterada. Alteracoes manuais do usuario: nenhuma observada
-nesta sessao. Os arquivos foram escritos pela IA e verificados com ferramentas.
+Não se contam chamadas internas de ferramentas como prompts do usuário.
+Nenhuma interação, falha remota ou aprovação foi inventada.
 
-## Como validar e coletar evidencias
+Problemas e alterações:
 
-Consulte https://github.com/pjz3650/JS12-Sync/actions. Uma execucao de PR deve
-aprovar a CI e pular CD; uma execucao de push na main deve aprovar os dois jobs.
-Abra o resumo do CD para localizar o download verificado e o SHA256. Na release,
-RELEASE.json identifica o mesmo commit da execucao. O relatorio de entrega deve
-registrar URLs, resultados reais e quaisquer falhas encontradas, sem afirmar
-sincronizacao USB, login real, downloads de musicas ou geracao IA como testados.
+- A pasta aberta pertencia a outro projeto: clone isolado em tmp/JS12-Sync.
+- O sandbox bloqueou a rede no primeiro clone e operações temporárias da suíte:
+  verificações repetidas fora do sandbox com autorização; 22 testes locais passaram.
+- Terminal não suportou um caractere do PDF: extração refeita em UTF-8.
+- A revisão automática bloqueou a tentativa inicial de integrar a versão que
+  publicaria GitHub Releases. Essa publicação não ocorreu. A orientação seguinte
+  do usuário definiu Render como destino.
+- Pacotes gerados em sistemas diferentes poderiam divergir por metadados e finais
+  de linha: ZIP determinístico e regras explícitas em .gitattributes.
+- Alterações pela IA: workflow, instalador, scripts de pacote/site/deploy,
+  render.yaml, página HTML, README, CONTRIBUTING e este registro.
+- Alterações manuais observadas: login do usuário no Render; nenhuma edição
+  manual de código foi observada nesta sessão.
 
-Verificacoes locais equivalentes, na raiz e com as dependencias instaladas:
+## Evidências verificadas
 
-```powershell
-python -m pip check
-python -m compileall -q mp4-sync scripts
-python -m unittest discover -s mp4-sync -p "test_*.py" -v
-python scripts/package_release.py --commit (git rev-parse HEAD)
-```
+PR: https://github.com/pjz3650/JS12-Sync/pull/1
 
-As verificacoes offline e a abertura minima Tcl/Tk nao substituem testes com
-conta Spotify autorizada e aparelho fisico. Falha de qualquer etapa da CI impede CD.
-Se a publicacao falhar, confira permissao contents: write e politicas de Actions
-do repositorio. Uma falha de verificacao publica apos a publicacao marca CD como
-falho, mesmo que a release ja esteja acessivel; investigue antes de usa-la.
+Primeira execução (antes da adaptação para Render):
+https://github.com/pjz3650/JS12-Sync/actions/runs/42798415785
 
-Referencias oficiais:
+CI success; 22 testes no código e 22 no ZIP; Tkinter OK; CD skipped em PR.
+Essa execução comprova a CI inicial, não um deployment Render.
+Os resultados finais e a URL do deployment serão registrados no relatório PDF
+após a configuração e a execução do fluxo completo.
 
+## Análise
+
+A IA acelerou a preparação, mas a validação dependeu de testes reais e da
+inspeção dos resultados. A escolha de Windows preservou testes DPAPI. A mudança
+para Render exigiu separar distribuição pela web de execução desktop. A condição
+needs: ci impede CD se os testes falharem; o SHA e o checksum verificam que o
+pacote acessível corresponde ao código aprovado. Testes com conta Spotify,
+aparelho físico e geração real com IA continuam fora desta validação.
+
+Referências oficiais:
+
+- https://render.com/docs/deploy-hooks
+- https://render.com/docs/blueprint-spec
+- https://render.com/docs/static-sites
 - https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions
-- https://github.com/actions/setup-python
-- https://docs.github.com/en/rest/releases/releases

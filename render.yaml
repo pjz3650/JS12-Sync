@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: js12-sync
+    runtime: static
+    repo: https://github.com/pjz3650/JS12-Sync
+    branch: main
+    autoDeployTrigger: 'off'
+    buildCommand: python3 scripts/build_site.py
+    staticPublishPath: dist/site
+    headers:
+      - path: /version.json
+        name: Cache-Control
+        value: no-store
+      - path: /downloads/*
+        name: Cache-Control
+        value: no-cache

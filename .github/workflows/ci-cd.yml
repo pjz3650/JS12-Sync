@@ -35,12 +35,16 @@ jobs:
           python -m compileall -q mp4-sync scripts
       - name: Executar testes offline
         run: python -m unittest discover -s mp4-sync -p "test_*.py" -v
+      - name: Testar integridade da distribuicao e verificacao do deploy
+        run: python -m unittest discover -s scripts -p "test_*.py" -v
       - name: Verificar interface Tkinter sem abrir o aplicativo
         run: |
           $env:PYTHONPATH = "$env:GITHUB_WORKSPACE/mp4-sync"
           python -c "import app, tkinter as tk; root = tk.Tk(); root.withdraw(); root.update_idletasks(); root.destroy(); print('Imports e Tkinter OK')"
       - name: Empacotar a versao testada
         run: python scripts/package_release.py --commit "${{ github.sha }}"
+      - name: Validar pagina de distribuicao
+        run: python scripts/build_site.py
       - name: Testar o pacote extraido
         run: |
           Expand-Archive dist/JS12-Sync-Windows.zip -DestinationPath package-check
@@ -48,57 +52,34 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows-release
-          path: dist/*
+          path: |
+            dist/JS12-Sync-Windows.zip
+            dist/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
 
   cd:
-    name: Publicar no GitHub Releases
+    name: Publicar e verificar no Render
     needs: ci
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: windows-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    defaults:
-      run:
-        shell: pwsh
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
-      RELEASE_TAG: windows-${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: render-production
+      cancel-in-progress: false
     steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
       - uses: actions/download-artifact@v4
         with:
           name: windows-release
           path: dist
-      - name: Conferir integridade antes da publicacao
-        run: |
-          $expected = (Get-Content dist/SHA256SUMS.txt).Split(' ')[0]
-          $actual = (Get-FileHash dist/JS12-Sync-Windows.zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne $expected) { throw 'Checksum do pacote diverge' }
-      - name: Publicar versao para download
-        run: |
-          @"
-          Aplicativo desktop para Windows. Requer Python 3.13 com Tcl/Tk e internet.
-
-          Baixe JS12-Sync-Windows.zip, extraia e execute Instalar JS12 Sync.cmd.
-          Depois abra mp4-sync/Abrir JS12 Sync.cmd. Configuracao Spotify e chave de IA sao locais.
-          O instalador prepara o ambiente Python e baixa FFmpeg/Deno via spotDL.
-          Nao e um executavel autonomo; consulte README.md dentro do ZIP.
-
-          Commit: ${{ github.sha }}
-          CI aprovada: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          "@ | Set-Content release-notes.md -Encoding utf8
-          gh release create "$env:RELEASE_TAG" dist/JS12-Sync-Windows.zip dist/SHA256SUMS.txt --target "${{ github.sha }}" --title "JS12 Sync - Windows ($env:RELEASE_TAG)" --notes-file release-notes.md --draft
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          gh release edit "$env:RELEASE_TAG" --draft=false --latest
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Verificar download publico da aplicacao publicada
-        run: |
-          $url = "https://github.com/$env:GH_REPO/releases/download/$env:RELEASE_TAG/JS12-Sync-Windows.zip"
-          Invoke-WebRequest -Uri $url -OutFile published.zip
-          $expected = (Get-Content dist/SHA256SUMS.txt).Split(' ')[0]
-          $actual = (Get-FileHash published.zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne $expected) { throw 'Download publicado diverge do pacote aprovado na CI' }
-          "### Deployment verificado`n`n[Baixar aplicacao]($url)`n`nCommit: ${{ github.sha }}`n`nSHA256: $actual" >> $env:GITHUB_STEP_SUMMARY
+      - name: Disparar deploy e verificar commit e download publicados
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          RENDER_SITE_URL: ${{ vars.RENDER_SITE_URL }}
+        run: python scripts/deploy_render.py
