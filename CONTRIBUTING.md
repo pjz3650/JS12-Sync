@@ -14,7 +14,7 @@ Obrigado por ajudar a tornar o projeto útil em mais aparelhos. Comece pelo [gui
 
 4. Abra um pull request para `main`, explicando o problema, o resultado e como verificou a alteração. Diferencie testes simulados de testes feitos em aparelho físico.
 
-Execute a suíte em Windows. Os testes não precisam de autorização Spotify, músicas ou acesso a USB real. A execução automática no GitHub Actions ainda não está configurada.
+Execute a suíte em Windows. Os testes não precisam de autorização Spotify, músicas ou acesso a USB real. O GitHub Actions executa esses testes automaticamente em pull requests e pushes para `main`. Somente pushes aprovados na `main` publicam uma nova versão no Render. Veja [CI/CD](docs/ci-cd.md).
 
 ## Relatar problemas
 
